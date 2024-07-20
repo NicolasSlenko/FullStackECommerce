@@ -2,6 +2,7 @@ import {useState, useEffect, Fragment} from "react";
 import {Product} from "../../app/models/product"; 
 import ProductList from "./ProductList";
 import agent from "../../app/api/agent";
+import Spinner from "../../app/layout/Spinner";
 
 export default function Catalog(){
     const [products,setProducts] = useState<Product[]>([]);
@@ -18,6 +19,8 @@ export default function Catalog(){
   },[]);
 
 if(!products) return <h3>Unable to Load Product Page</h3>
+
+if(loading) return <Spinner message = 'Loading Products...'/>
 
 return(
  <>

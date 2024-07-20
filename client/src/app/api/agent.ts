@@ -1,21 +1,28 @@
-import axios, { Axios, AxiosError, AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import { router } from "../router/Routes";
+import { toast } from "react-toastify";
+import basketService from "./basketService";
+import { Dispatch } from "redux";
+import { Product } from "../models/product";
+import type { Basket } from "../models/basket";
 
 axios.defaults.baseURL = 'http://localhost:8081/api/';
 
 const responseBody = (response: AxiosResponse) => response.data;
+const idle = () => new Promise(resolve => setTimeout(resolve,100))
 
 axios.interceptors.response.use(async response=>{
+    await idle(); 
     return response
 }, (error: AxiosError) => {
     const {status} = error.response as AxiosResponse; 
     switch(status){
         case 404:
-            console.log("Resource not found");
+            toast.error("Resource not found");
             router.navigate('/not-found');
             break;
         case 500:
-            console.log("Internal Server Error Occured");
+            toast.error("Internal Server Error Occured");
             router.navigate('/server-error');
             break;
         default:
@@ -37,8 +44,83 @@ const Store = {
     details: (id: number) => requests.get(`products/${id}`)
 };
 
+const Basket = {
+    get: async() => {
+        try{
+            return await basketService.getBasket(); 
+        }
+        catch(error){
+            console.error("Failed to get Basket: ", error);
+            throw error; 
+        }
+    },
+
+    addItem: async(product: Product, dispatch: Dispatch) => {
+        try{
+            const result = await basketService.addItemToBasket(product, 1, dispatch); 
+            console.log(result);
+            return result; 
+
+        }catch(error){
+            console.error("Failed to add new item to basket ", error);
+            throw error;
+        }
+    },
+
+    removeItem: async (itemId: number, dispatch: Dispatch) => {
+        try{
+            await basketService.remove(itemId, dispatch); 
+
+        }catch(error){
+            console.error("Failed to remove an item from the basket ", error);
+            throw error;
+        }
+    },
+
+    incrementItemQuantity: async (itemId: number, quantity: number = 1, dispatch: Dispatch) => {
+        try {
+          await basketService.incrementItemQuantity(itemId, quantity, dispatch);
+        } catch (error) {
+          console.error("Failed to increment item quantity in basket:", error);
+          throw error;
+        }
+      },
+      
+      decrementItemQuantity: async (itemId: number, quantity: number = 1, dispatch: Dispatch) => {
+        try {
+          await basketService.decrementItemQuantity(itemId, quantity, dispatch);
+        } catch (error) {
+          console.error("Failed to decrement item quantity in basket:", error);
+          throw error;
+        }
+      },
+      
+      setBasket: async (basket: Basket, dispatch: Dispatch) => {
+        try {
+          await basketService.setBasket(basket, dispatch);
+        } catch (error) {
+          console.error("Failed to set basket:", error);
+          throw error;
+        }
+      },
+      deleteBasket: async(basketId: string) =>{
+        try{
+          await basketService.deleteBasket(basketId);
+        } catch(error){
+          console.log("Failed to delete the Basket");
+          throw error;
+        }
+      }
+
+
+
+
+
+}
+
 const agent = {
-    Store 
+    Store,
+    Basket
 };
 
 export default agent;
